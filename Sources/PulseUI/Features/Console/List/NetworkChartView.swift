@@ -114,7 +114,7 @@ extension NetworkTransactionMetricsEntity {
     func chartDescription(url: String?) -> String? {
         guard let url = url, let url = URL(string: url) else { return nil }
         
-        return String(format: "%@, %.2f",
+        return String(format: "%@, %.3f",
                       url.path,
                       duration)
     }
