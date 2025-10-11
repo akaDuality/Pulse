@@ -23,6 +23,8 @@ public struct NetworkChartView: View {
         rowHeight + space
     }
     
+    let chartLength = 3
+    
     public var body: some View {
         Chart(Array(zip(requests.indices, requests)), id: \.1) { index, task in
             if task.hasMetrics {
@@ -30,7 +32,7 @@ public struct NetworkChartView: View {
             }
         }
         .chartScrollableAxes(.horizontal)
-        .chartXVisibleDomain(length: 3) // seconds
+        .chartXVisibleDomain(length: chartLength) // seconds
         .frame(height: CGFloat(requests.count) * lineHeight)
         .chartYAxis(.hidden)
 //        .chartXAxis {
@@ -66,7 +68,6 @@ struct RequestRow: ChartContent {
     init(task: NetworkTaskEntity, index: Int, height: CGFloat, showAnnotation: Bool) {
         self.task = task
         self.viewModel = TimingViewModel(task: task, relativeToTask: false)
-        
         self.index = index
         self.height = height
         self.showAnnotation = showAnnotation
@@ -76,11 +77,13 @@ struct RequestRow: ChartContent {
         Plot {
             ForEach(viewModel.sections) { section in
                 ForEach(section.items) { item in
-                    BarMark(xStart: .value("Start", Date(timeIntervalSince1970: item.start)),
-                            xEnd: .value("End", Date(timeIntervalSince1970: item.start + item.duration)),
-                            y: .value("Index", index),
-                            height: .fixed(height))
-                    .foregroundStyle(Color(item.color))
+                    if item.title != "Total" { // Total is hiding everything on chart
+                        BarMark(xStart: .value("Start", Date(timeIntervalSince1970: item.start)),
+                                xEnd: .value("End", Date(timeIntervalSince1970: item.start + item.duration)),
+                                y: .value("Index", index),
+                                height: .fixed(height))
+                        .foregroundStyle(Color(item.color))
+                    }
                 }
             }
         }
