@@ -100,13 +100,24 @@ struct RequestRow: ChartContent {
         }
         .annotation(position: .trailing, alignment: .center) {
             if showAnnotation, let url = task.originalRequest!.url  {
-                Text("\(URL(string: url)?.path() ?? url), \(transactions.last!.responseEndDate!.timeIntervalSince1970 - transactions.first!.fetchStartDate!.timeIntervalSince1970)")
+                Text(transactions.last!.chartDescription)
                     .font(.system(size: 6))
             } else {
                 EmptyView()
             }
         }
 
+    }
+}
+
+extension NetworkTransactionMetricsEntity {
+    var chartDescription: String {
+        String(format: "%@, %.2f",
+               URL(string: url)?.path() ?? url,
+               duration)
+    }
+    var duration: TimeInterval {
+        responseEndDate!.timeIntervalSince1970 - fetchStartDate!.timeIntervalSince1970
     }
 }
 
