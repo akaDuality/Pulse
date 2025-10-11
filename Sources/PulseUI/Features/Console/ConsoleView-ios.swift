@@ -10,6 +10,31 @@ import Pulse
 import Combine
 import WatchConnectivity
 
+public struct NetworkView: View {
+    @StateObject private var environment: ConsoleEnvironment // Never reloads
+    @Environment(\.presentationMode) private var presentationMode
+    private var isCloseButtonHidden = false
+    
+    init(environment: ConsoleEnvironment) {
+        _environment = StateObject(wrappedValue: environment)
+    }
+    
+    public var body: some View {
+        if #available(iOS 17, *) {
+            contents
+        } else {
+            PlaceholderView(imageName: "xmark.octagon", title: "Unsupported", subtitle: "Pulse requires iOS 16 or later").padding()
+        }
+    }
+    
+    @available(iOS 17, visionOS 1, *)
+    private var contents: some View {
+        ChartView()
+            .injecting(environment)
+    }
+}
+
+
 public struct ConsoleView: View {
     @StateObject private var environment: ConsoleEnvironment // Never reloads
     @Environment(\.presentationMode) private var presentationMode

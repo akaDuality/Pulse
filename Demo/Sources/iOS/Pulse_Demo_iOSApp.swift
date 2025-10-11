@@ -14,6 +14,7 @@ struct PulseDemo_iOS: App {
     var body: some Scene {
         WindowGroup {
             NavigationView {
+                NetworkView(store: .demo)
                 ConsoleView(store: .demo)
             }
         }
