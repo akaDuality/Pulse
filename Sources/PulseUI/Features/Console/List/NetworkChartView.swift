@@ -138,7 +138,16 @@ extension NetworkTaskEntity {
                 return false
             }
             
-            return start1 < start2
+            if start1 != start2 {
+                return start1 < start2
+            }
+            
+            guard let end1 = lhs.fetchStartDate,
+                  let end2 = rhs.fetchStartDate else {
+                return false
+            }
+            
+            return end1 < end2
         }
     }
 }
