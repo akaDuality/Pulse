@@ -99,8 +99,8 @@ struct RequestRow: ChartContent {
             }
         }
         .annotation(position: .trailing, alignment: .center) {
-            if showAnnotation, let url = task.originalRequest!.url  {
-                Text(transactions.last!.chartDescription)
+            if showAnnotation, let description = transactions.last?.chartDescription  {
+                Text(description)
                     .font(.system(size: 6))
             } else {
                 EmptyView()
@@ -112,7 +112,9 @@ struct RequestRow: ChartContent {
 
 extension NetworkTransactionMetricsEntity {
     var chartDescription: String {
-        String(format: "%@, %.2f",
+        guard let url = task.originalRequest!.url else { return nil }
+        
+        return String(format: "%@, %.2f",
                URL(string: url)?.path() ?? url,
                duration)
     }
