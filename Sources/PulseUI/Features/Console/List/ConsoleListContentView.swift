@@ -19,9 +19,7 @@ struct ConsoleListContentView: View {
 
     @ViewBuilder
     private var plainView: some View {
-        if #available(iOS 17, *) {
-            NetworkChartView()
-        } else if viewModel.entities.isEmpty {
+        if viewModel.entities.isEmpty {
             Text("Empty")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
