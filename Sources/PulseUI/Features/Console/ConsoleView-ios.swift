@@ -46,7 +46,14 @@ public struct ConsoleView: View {
 
     public var body: some View {
         if #available(iOS 16, *) {
-            contents
+            GeometryReader { proxy in
+                if proxy.size.width < proxy.size.height { // Vertical
+                    contents
+                } else {
+                    NetworkView(environment: environment)
+                        .scenePadding(.vertical)
+                }
+            }
         } else {
             PlaceholderView(imageName: "xmark.octagon", title: "Unsupported", subtitle: "Pulse requires iOS 16 or later").padding()
         }
@@ -54,6 +61,7 @@ public struct ConsoleView: View {
 
     @available(iOS 16, visionOS 1, *)
     private var contents: some View {
+        
         ConsoleListView()
             .navigationTitle(environment.title)
             .toolbar {

@@ -166,20 +166,23 @@ package final class TimingRowSectionViewModel: Identifiable {
 package final class TimingRowViewModel: Identifiable {
     package let title: String
     package let value: String
+    
     package let color: UXColor
     // [0, 1]
     package let start: CGFloat
     // [0, 1]
     package let length: CGFloat
+    package let duration: TimeInterval
 
     package var id: ObjectIdentifier { ObjectIdentifier(self) }
 
-    package init(title: String, value: String, color: UXColor, start: CGFloat, length: CGFloat) {
+    package init(title: String, value: String, color: UXColor, start: CGFloat, length: CGFloat, duration: TimeInterval) {
         self.title = title
         self.value = value
         self.color = color
         self.start = start
         self.length = length
+        self.duration = duration
     }
 }
 
@@ -198,13 +201,13 @@ struct TimingView_Previews: PreviewProvider {
 
 private let mockSections = [
     TimingRowSectionViewModel(title: "Response", items: [
-        TimingRowViewModel(title: "Scheduling", value: "0.01ms", color: .systemBlue, start: 0.0, length: 0.001),
-        TimingRowViewModel(title: "Waiting", value: "41.2ms", color: .systemBlue, start: 0.0, length: 0.4),
-        TimingRowViewModel(title: "Download", value: "0.2ms", color: .systemRed, start: 0.4, length: 0.05)
+        TimingRowViewModel(title: "Scheduling", value: "0.01ms", color: .systemBlue, start: 0.0, length: 0.001, duration: 0.001),
+        TimingRowViewModel(title: "Waiting", value: "41.2ms", color: .systemBlue, start: 0.0, length: 0.4, duration: 0.0412),
+        TimingRowViewModel(title: "Download", value: "0.2ms", color: .systemRed, start: 0.4, length: 0.05, duration: 0.002)
     ]),
     TimingRowSectionViewModel(title: "Cache Lookup", items: [
-        TimingRowViewModel(title: "Waiting", value: "50.2ms", color: .systemYellow, start: 0.45, length: 0.3),
-        TimingRowViewModel(title: "Download", value: "30.0ms", color: .systemGreen, start: 0.75, length: 100.0)
+        TimingRowViewModel(title: "Waiting", value: "50.2ms", color: .systemYellow, start: 0.45, length: 0.3, duration: 0.0502),
+        TimingRowViewModel(title: "Download", value: "30.0ms", color: .systemGreen, start: 0.75, length: 100.0, duration: 0.030)
     ])
 ]
 #endif

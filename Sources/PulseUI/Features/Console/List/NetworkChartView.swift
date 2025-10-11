@@ -18,7 +18,10 @@ public struct NetworkChartView: View {
     }
     
     let rowHeight: CGFloat = 10
-    let lineHeight: CGFloat = 12
+    let space: CGFloat = 4
+    var lineHeight: CGFloat {
+        rowHeight + space
+    }
     
     public var body: some View {
         Chart(Array(zip(requests.indices, requests)), id: \.1) { index, task in
@@ -55,44 +58,29 @@ public struct NetworkChartView: View {
 @available(iOS 17, *)
 struct RequestRow: ChartContent {
     let task: NetworkTaskEntity
-
+    let viewModel: TimingViewModel
     let index: Int
     let height: CGFloat
     let showAnnotation: Bool
     
+    init(task: NetworkTaskEntity, index: Int, height: CGFloat, showAnnotation: Bool) {
+        self.task = task
+        self.viewModel = TimingViewModel(task: task, relativeToTask: false)
+        
+        self.index = index
+        self.height = height
+        self.showAnnotation = showAnnotation
+    }
+    
     var body: some ChartContent {
         Plot {
-            ForEach(task.sortedTransactions, id: \.self) { metrics in
-                if let fetchStart = metrics.fetchStartDate, let connectStart = metrics.connectStartDate {
-                    BarMark(xStart: .value("Start", fetchStart),
-                            xEnd: .value("End", connectStart),
+            ForEach(viewModel.sections) { section in
+                ForEach(section.items) { item in
+                    BarMark(xStart: .value("Start", Date(timeIntervalSince1970: item.start)),
+                            xEnd: .value("End", Date(timeIntervalSince1970: item.start + item.duration)),
                             y: .value("Index", index),
                             height: .fixed(height))
-                    .foregroundStyle(.purple)
-                }
-                
-                if let connectStart = metrics.connectStartDate, let connectEnd = metrics.connectEndDate {
-                    BarMark(xStart: .value("Start", connectStart),
-                            xEnd: .value("End", connectEnd),
-                            y: .value("Index", index),
-                            height: .fixed(height))
-                    .foregroundStyle(.orange)
-                }
-                
-                if let waitStart = metrics.requestEndDate, let waitEndEnd = metrics.responseStartDate {
-                    BarMark(xStart: .value("Start", waitStart),
-                            xEnd: .value("End", waitEndEnd),
-                            y: .value("Index", index),
-                            height: .fixed(height))
-                    .foregroundStyle(.gray)
-                }
-                
-                if let requestStart = metrics.responseStartDate, let responseEnd = metrics.responseEndDate {
-                    BarMark(xStart: .value("Start", requestStart),
-                            xEnd: .value("End", responseEnd),
-                            y: .value("Index", index),
-                            height: .fixed(height))
-                    .foregroundStyle(task.statusCode == 200 ? .green : .red)
+                    .foregroundStyle(Color(item.color))
                 }
             }
         }
@@ -104,7 +92,6 @@ struct RequestRow: ChartContent {
                 EmptyView()
             }
         }
-
     }
 }
 
@@ -121,7 +108,7 @@ extension NetworkTaskEntity {
             return 0
         }
         
-        let sorted = sortedTransactions
+        let sorted = orderedTransactions
         
         guard let start = sorted.first!.fetchStartDate,
               let end = sorted.last?.responseEndDate else {
@@ -129,26 +116,6 @@ extension NetworkTaskEntity {
         }
         
         return end.timeIntervalSince(start)
-    }
-    
-    var sortedTransactions: [NetworkTransactionMetricsEntity] {
-        Array(transactions).sorted { lhs, rhs in
-            guard let start1 = lhs.fetchStartDate,
-                  let start2 = rhs.fetchStartDate else {
-                return false
-            }
-            
-            if start1 != start2 {
-                return start1 < start2
-            }
-            
-            guard let end1 = lhs.fetchStartDate,
-                  let end2 = rhs.fetchStartDate else {
-                return false
-            }
-            
-            return end1 < end2
-        }
     }
 }
 

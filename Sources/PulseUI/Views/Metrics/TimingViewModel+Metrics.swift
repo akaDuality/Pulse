@@ -8,15 +8,15 @@ import SwiftUI
 import Pulse
 
 extension TimingViewModel {
-    convenience init(task: NetworkTaskEntity) {
-        self.init(sections: makeTimingSections(task: task))
+    convenience init(task: NetworkTaskEntity, relativeToTask: Bool) {
+        self.init(sections: makeTimingSections(task: task, relativeToTask: relativeToTask))
     }
 
     convenience init?(transaction: NetworkTransactionMetricsEntity, task: NetworkTaskEntity) {
         guard let interval = task.taskInterval else { // Anchor to task
             return nil
         }
-        let sections = makeTimingRows(transaction: transaction, taskInterval: interval)
+        let sections = makeTimingRows(transaction: transaction, taskInterval: interval, relativeToTask: true)
         guard !sections.isEmpty else {
             return nil
         }
@@ -24,7 +24,7 @@ extension TimingViewModel {
     }
 }
 
-private func makeTimingSections(task: NetworkTaskEntity) -> [TimingRowSectionViewModel] {
+private func makeTimingSections(task: NetworkTaskEntity, relativeToTask: Bool) -> [TimingRowSectionViewModel] {
     guard let taskInterval = task.taskInterval else {
         return []
     }
@@ -34,7 +34,7 @@ private func makeTimingSections(task: NetworkTaskEntity) -> [TimingRowSectionVie
     var currentURL: String?
 
     for transaction in task.orderedTransactions {
-        let rows = makeTimingRows(transaction: transaction, taskInterval: taskInterval)
+        let rows = makeTimingRows(transaction: transaction, taskInterval: taskInterval, relativeToTask: relativeToTask)
         guard !rows.isEmpty else {
             continue
         }
@@ -48,26 +48,30 @@ private func makeTimingSections(task: NetworkTaskEntity) -> [TimingRowSectionVie
     }
 
     sections.append(TimingRowSectionViewModel(title: "Total", items: [
-        _makeRow(title: "Total", color: .systemGray2, from: taskInterval.start, to: taskInterval.end, taskInterval: taskInterval)
+        _makeRow(title: "Total", color: .systemGray2, from: taskInterval.start, to: taskInterval.end, taskInterval: taskInterval, relativeToTask: relativeToTask)
     ]))
 
     return sections
 }
 
-private func _makeRow(title: String, color: UXColor, from: Date, to: Date?, taskInterval: DateInterval) -> TimingRowViewModel {
-    let start = CGFloat(from.timeIntervalSince(taskInterval.start) / taskInterval.duration)
+private func _makeRow(title: String, color: UXColor, from: Date, to: Date?, taskInterval: DateInterval, relativeToTask: Bool) -> TimingRowViewModel {
+    let start = if relativeToTask {
+        CGFloat(from.timeIntervalSince(taskInterval.start) / taskInterval.duration)
+    } else {
+        CGFloat(from.timeIntervalSince1970)
+    }
     let to = to ?? taskInterval.end
     let duration = to.timeIntervalSince(from)
     let length = CGFloat(duration / taskInterval.duration)
     let value = DurationFormatter.string(from: duration)
-    return TimingRowViewModel(title: title, value: value, color: color, start: CGFloat(start), length: length)
+    return TimingRowViewModel(title: title, value: value, color: color, start: CGFloat(start), length: length, duration: duration)
 }
 
-private func makeTimingRows(transaction: NetworkTransactionMetricsEntity, taskInterval: DateInterval) -> [TimingRowSectionViewModel] {
+private func makeTimingRows(transaction: NetworkTransactionMetricsEntity, taskInterval: DateInterval, relativeToTask: Bool) -> [TimingRowSectionViewModel] {
     var sections = [TimingRowSectionViewModel]()
 
     func makeRow(title: String, color: UXColor, from: Date, to: Date?) -> TimingRowViewModel {
-        _makeRow(title: title, color: color, from: from, to: to, taskInterval: taskInterval)
+        _makeRow(title: title, color: color, from: from, to: to, taskInterval: taskInterval, relativeToTask: relativeToTask)
     }
 
     let timing = transaction.timing
