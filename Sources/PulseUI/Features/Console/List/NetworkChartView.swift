@@ -27,7 +27,7 @@ public struct NetworkChartView: View {
             }
         }
         .chartScrollableAxes(.horizontal)
-        .chartXVisibleDomain(length: 1) // seconds
+        .chartXVisibleDomain(length: 3) // seconds
         .frame(height: CGFloat(requests.count) * lineHeight)
         .chartYAxis(.hidden)
 //        .chartXAxis {
@@ -65,33 +65,33 @@ struct RequestRow: ChartContent {
     var body: some ChartContent {
         Plot {
             ForEach(transactions, id: \.self) { metrics in
-                if let fetchStart = metrics.fetchStartDate {
+                if let fetchStart = metrics.fetchStartDate, let connectStart = metrics.connectStartDate {
                     BarMark(xStart: .value("Start", fetchStart),
-                            xEnd: .value("End", metrics.connectStartDate ?? .now),
+                            xEnd: .value("End", connectStart),
                             y: .value("Index", index),
                             height: .fixed(height))
                     .foregroundStyle(.purple)
                 }
                 
-                if let connectStart = metrics.connectStartDate {
+                if let connectStart = metrics.connectStartDate, let connectEnd = metrics.connectEndDate {
                     BarMark(xStart: .value("Start", connectStart),
-                            xEnd: .value("End", metrics.connectEndDate ?? .now),
+                            xEnd: .value("End", connectEnd),
                             y: .value("Index", index),
                             height: .fixed(height))
                     .foregroundStyle(.orange)
                 }
                 
-                if let waitStart = metrics.requestEndDate {
+                if let waitStart = metrics.requestEndDate, let waitEndEnd = metrics.responseStartDate {
                     BarMark(xStart: .value("Start", waitStart),
-                            xEnd: .value("End",  metrics.responseStartDate ?? .now),
+                            xEnd: .value("End", waitEndEnd),
                             y: .value("Index", index),
                             height: .fixed(height))
                     .foregroundStyle(.gray)
                 }
                 
-                if let requestStart = metrics.responseStartDate {
+                if let requestStart = metrics.responseStartDate, let responseEnd = metrics.responseEndDate {
                     BarMark(xStart: .value("Start", requestStart),
-                            xEnd: .value("End", metrics.responseEndDate ?? .now),
+                            xEnd: .value("End", responseEnd),
                             y: .value("Index", index),
                             height: .fixed(height))
                     .foregroundStyle(task.statusCode == 200 ? .green : .red)
