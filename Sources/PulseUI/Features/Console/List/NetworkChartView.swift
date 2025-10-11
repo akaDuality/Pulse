@@ -17,8 +17,8 @@ public struct NetworkChartView: View {
         }
     }
     
-    let rowHeight: CGFloat = 14
-    let lineHeight: CGFloat = 18
+    let rowHeight: CGFloat = 10
+    let lineHeight: CGFloat = 12
     
     public var body: some View {
         Chart(Array(zip(requests.indices, requests)), id: \.1) { index, task in
@@ -101,7 +101,7 @@ struct RequestRow: ChartContent {
         .annotation(position: .trailing, alignment: .center) {
             if showAnnotation, let url = task.originalRequest!.url  {
                 Text("\(URL(string: url)?.path() ?? url), \(transactions.last!.responseEndDate!.timeIntervalSince1970 - transactions.first!.fetchStartDate!.timeIntervalSince1970)")
-                    .font(.caption2)
+                    .font(.system(size: 6))
             } else {
                 EmptyView()
             }
