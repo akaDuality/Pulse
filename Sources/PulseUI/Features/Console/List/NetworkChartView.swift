@@ -55,16 +55,14 @@ public struct NetworkChartView: View {
 @available(iOS 17, *)
 struct RequestRow: ChartContent {
     let task: NetworkTaskEntity
-    var transactions: [NetworkTransactionMetricsEntity] {
-        Array(task.transactions)
-    }
+
     let index: Int
     let height: CGFloat
     let showAnnotation: Bool
     
     var body: some ChartContent {
         Plot {
-            ForEach(transactions, id: \.self) { metrics in
+            ForEach(task.sortedTransactions, id: \.self) { metrics in
                 if let fetchStart = metrics.fetchStartDate, let connectStart = metrics.connectStartDate {
                     BarMark(xStart: .value("Start", fetchStart),
                             xEnd: .value("End", connectStart),
@@ -99,7 +97,7 @@ struct RequestRow: ChartContent {
             }
         }
         .annotation(position: .trailing, alignment: .center) {
-            if showAnnotation, let description = transactions.last?.chartDescription(url: task.originalRequest?.url)  {
+            if showAnnotation, let description = task.chartDescription  {
                 Text(description)
                     .font(.system(size: 6))
             } else {
@@ -110,16 +108,38 @@ struct RequestRow: ChartContent {
     }
 }
 
-extension NetworkTransactionMetricsEntity {
-    func chartDescription(url: String?) -> String? {
-        guard let url = url, let url = URL(string: url) else { return nil }
+extension NetworkTaskEntity {
+    var chartDescription: String? {
+        guard let url = originalRequest?.url, let url = URL(string: url) else { return nil }
         
         return String(format: "%@, %.3f",
                       url.path,
                       duration)
     }
     var duration: TimeInterval {
-        responseEndDate!.timeIntervalSince1970 - fetchStartDate!.timeIntervalSince1970
+        if transactions.isEmpty {
+            return 0
+        }
+        
+        let sorted = sortedTransactions
+        
+        guard let start = sorted.first!.fetchStartDate,
+              let end = sorted.last?.responseEndDate else {
+            return 0
+        }
+        
+        return end.timeIntervalSince(start)
+    }
+    
+    var sortedTransactions: [NetworkTransactionMetricsEntity] {
+        Array(transactions).sorted { lhs, rhs in
+            guard let start1 = lhs.fetchStartDate,
+                  let start2 = rhs.fetchStartDate else {
+                return false
+            }
+            
+            return start1 < start2
+        }
     }
 }
 
