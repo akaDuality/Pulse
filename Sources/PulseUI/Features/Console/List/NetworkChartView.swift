@@ -115,7 +115,7 @@ struct BatchChart: View {
     let group: GroupBatch
     
     let rowHeight: CGFloat = 10
-    let space: CGFloat = 4
+    let space: CGFloat = 2
     var lineHeight: CGFloat {
         rowHeight + space
     }
@@ -130,25 +130,25 @@ struct BatchChart: View {
         .chartXVisibleDomain(length: chartLength) // seconds
         .frame(height: CGFloat(group.tasks.count) * lineHeight + 50) // 50 for time ticks
         .chartYAxis(.hidden)
-//        .chartXAxis {
-//            AxisMarks(values: .stride(by: .second, count: 4)) { value in
-//                if let date = value.as(Date.self) {
-//                    let second = Calendar.current.component(.second, from: date)
-//
-//                    AxisValueLabel {
-//                        Text(date, format: .dateTime.second())
-//                    }
-//
-//                    if second == 0 {
-//                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-//                        AxisTick(stroke: StrokeStyle(lineWidth: 0.5))
-//                    } else {
-//                        AxisGridLine()
-//                        AxisTick()
-//                    }
-//                }
-//            }
-//        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .second, count: 4)) { value in
+                if let date = value.as(Date.self) {
+                    let second = Calendar.current.component(.second, from: date)
+                    
+                    AxisValueLabel {
+                        Text(date, format: .dateTime.second())
+                    }
+                    
+                    if second == 0 {
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        AxisTick(stroke: StrokeStyle(lineWidth: 0.5))
+                    } else {
+                        AxisGridLine()
+                        AxisTick()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -174,7 +174,7 @@ struct RequestRow: ChartContent {
     
     init(task: NetworkTaskEntity, index: Int, height: CGFloat, showAnnotation: Bool) {
         self.task = task
-        self.viewModel = TimingViewModel(task: task, relativeToTask: false)
+        self.viewModel = TimingViewModel(task: task, relativeToTask: false) // TODO: Set true for single response and remove plot for them
         self.index = index
         self.height = height
         self.showAnnotation = showAnnotation
