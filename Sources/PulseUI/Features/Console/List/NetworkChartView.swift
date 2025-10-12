@@ -11,7 +11,9 @@ public struct NetworkChartView: View {
 
     let intervalToBatch: TimeInterval = 10
     
-    var groups: [GroupBatch] {
+    @State private var groups: [GroupBatch] = []
+    
+    func recalculateGroups() -> [GroupBatch] {
         let all: [NetworkTaskEntity] = listViewModel.entities.compactMap { entity in
             switch LoggerEntity(entity) {
             case .message:
@@ -45,26 +47,39 @@ public struct NetworkChartView: View {
     }
 
     @State var shownGroup: GroupBatch?
+    var currentGroupIndex: Int {
+        groups.firstIndex { group in
+            group.id == shownGroup?.id
+        } ?? 0
+    }
     
     public var body: some View {
         VStack {
             if groups.count > 1 {
                 HStack {
                     Button(action:  {
-                        shownGroup = groups.first // TODO: move to prev
+                        let nextIndex = currentGroupIndex + 1
+                        if nextIndex <= groups.count {
+                            shownGroup = groups[nextIndex]
+                        }
                     }, label: {
                         Image(systemName: "chevron.left")
                             .frame(width: 100, height: 30)
                     })
-                                       
+                    .disabled(currentGroupIndex == 0)
+                    
                     Text("\(groups.count)")
                     
                     Button(action:  {
-                        shownGroup = groups.last // TODO: move to last
+                        let prevIndex = currentGroupIndex - 1
+                        if prevIndex >= 0 {
+                            shownGroup = groups[prevIndex]
+                        }
                     }, label: {
                         Image(systemName: "chevron.right")
                             .frame(width: 100, height: 30)
                     })
+                    .disabled(currentGroupIndex == groups.count - 1)
                 }
             }
             
@@ -84,6 +99,9 @@ public struct NetworkChartView: View {
                     }
                 }
             }
+        }
+        .onChange(of: listViewModel.entities) { newValue in
+            groups = recalculateGroups()
         }
     }
 }
