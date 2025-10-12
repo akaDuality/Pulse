@@ -20,11 +20,14 @@ public struct NetworkChartView: View {
         } ?? 0
     }
     
+    @State private var currentScrollPosition: Date = Date()
+    
     public var body: some View {
         VStack {
             if let shownGroup {
                 BatchChart(group: shownGroup)
                     .frame(minHeight: 100)
+                    .chartScrollPosition(x: $currentScrollPosition)
             } else {
                 Button("Reload") {
                     shownGroup = groups.first
@@ -35,9 +38,18 @@ public struct NetworkChartView: View {
         }
         .onChange(of: listViewModel.entities) { newValue in
             groups = recalculateGroups()
+            shownGroup = GroupBatch(id: UUID(), tasks: listViewModel.entities.onlyNetworks)
             
-            if shownGroup == nil {
-                shownGroup = groups.last
+//            if shownGroup == nil {
+//                shownGroup = groups.last
+//            }
+        }
+    }
+    
+    func scroll(to groupIndex: Int) {
+        withAnimation {
+            if let date = groups[groupIndex].tasks.first?.orderedTransactions.first?.fetchStartDate {
+                currentScrollPosition = date
             }
         }
     }
@@ -49,8 +61,9 @@ public struct NetworkChartView: View {
                 Button(action:  {
                     let prevIndex = currentGroupIndex - 1
                     if prevIndex >= 0 {
-                        shownGroup = groups[prevIndex]
+                        scroll(to: prevIndex)
                     }
+                    
                 }, label: {
                     Image(systemName: "chevron.left")
                         .frame(width: 100, height: 30)
@@ -62,7 +75,7 @@ public struct NetworkChartView: View {
                 Button(action:  {
                     let nextIndex = currentGroupIndex + 1
                     if nextIndex < groups.count {
-                        shownGroup = groups[nextIndex]
+                        scroll(to: nextIndex)
                     }
                 }, label: {
                     Image(systemName: "chevron.right")
@@ -77,14 +90,7 @@ public struct NetworkChartView: View {
     
     
     func recalculateGroups() -> [GroupBatch] {
-        let all: [NetworkTaskEntity] = listViewModel.entities.compactMap { entity in
-            switch LoggerEntity(entity) {
-            case .message:
-                return nil
-            case .task(let task):
-                return task
-            }
-        }
+        let all: [NetworkTaskEntity] = listViewModel.entities.onlyNetworks
         
         print("Tasks count \(all.count)")
         
@@ -107,6 +113,20 @@ public struct NetworkChartView: View {
         }
         print("Groups count \(groups.count)\n")
         return groups
+    }
+}
+
+import CoreData
+extension Array where Element == NSManagedObject {
+    var onlyNetworks: [NetworkTaskEntity] {
+        compactMap { entity in
+            switch LoggerEntity(entity) {
+            case .message:
+                return nil
+            case .task(let task):
+                return task
+            }
+        }
     }
 }
 
@@ -160,6 +180,11 @@ class GroupBatch: Identifiable {
     init(id: UUID, task: NetworkTaskEntity) {
         self.id = id
         self.tasks = [task]
+    }
+    
+    init(id: UUID, tasks: [NetworkTaskEntity]) {
+        self.id = id
+        self.tasks = tasks
     }
 }
 
