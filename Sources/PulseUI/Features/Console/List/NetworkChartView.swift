@@ -50,17 +50,22 @@ public struct NetworkChartView: View {
         VStack {
             if groups.count > 1 {
                 HStack {
-                    Button("Previous", systemImage: "chevron.left") {
+                    Button(action:  {
                         shownGroup = groups.first // TODO: move to prev
-                    }
-                    
+                    }, label: {
+                        Image(systemName: "chevron.left")
+                            .frame(width: 100, height: 30)
+                    })
+                                       
                     Text("\(groups.count)")
                     
-                    Button("Next", systemImage: "chevron.right") {
-                        shownGroup = groups.last // TODO: Move to next
-                    }
+                    Button(action:  {
+                        shownGroup = groups.last // TODO: move to last
+                    }, label: {
+                        Image(systemName: "chevron.right")
+                            .frame(width: 100, height: 30)
+                    })
                 }
-                .labelsHidden()
             }
             
             if shownGroup == nil {
