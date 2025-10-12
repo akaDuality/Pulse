@@ -11,13 +11,24 @@ public struct NetworkChartView: View {
 
     let intervalToBatch: TimeInterval = 10
     
-    @State private var groups: [GroupBatch] = []
+//    @State private var groups: [GroupBatch] = []
+    @State private var datesToScroll: [Date] = []
 
     @State var shownGroup: GroupBatch?
     var currentGroupIndex: Int {
-        groups.firstIndex { group in
-            group.id == shownGroup?.id
-        } ?? 0
+        guard !datesToScroll.isEmpty else { return 0 }
+        
+        let current = currentScrollPosition
+        var closestIndex = 0
+        var smallestDifference = abs(datesToScroll[0].timeIntervalSince(current))
+        for (index, date) in datesToScroll.enumerated() {
+            let difference = abs(date.timeIntervalSince(current))
+            if difference < smallestDifference {
+                smallestDifference = difference
+                closestIndex = index
+            }
+        }
+        return closestIndex
     }
     
     @State private var currentScrollPosition: Date = Date()
@@ -29,15 +40,16 @@ public struct NetworkChartView: View {
                     .frame(minHeight: 100)
                     .chartScrollPosition(x: $currentScrollPosition)
             } else {
-                Button("Reload") {
-                    shownGroup = groups.first
-                }
+//                Button("Reload") {
+//                    shownGroup = groups.first
+//                }
+                Text("Waiting for network data...")
             }
             
             navigationButtons
         }
         .onChange(of: listViewModel.entities) { newValue in
-            groups = recalculateGroups()
+            datesToScroll = recalculateGroups()
             shownGroup = GroupBatch(id: UUID(), tasks: listViewModel.entities.onlyNetworks)
             
 //            if shownGroup == nil {
@@ -48,15 +60,13 @@ public struct NetworkChartView: View {
     
     func scroll(to groupIndex: Int) {
         withAnimation {
-            if let date = groups[groupIndex].tasks.first?.orderedTransactions.first?.fetchStartDate {
-                currentScrollPosition = date
-            }
+            currentScrollPosition = datesToScroll[groupIndex]
         }
     }
     
     @ViewBuilder
     var navigationButtons: some View {
-        if groups.count > 1 {
+        if datesToScroll.count > 1 {
             HStack {
                 Button(action:  {
                     let prevIndex = currentGroupIndex - 1
@@ -68,28 +78,27 @@ public struct NetworkChartView: View {
                     Image(systemName: "chevron.left")
                         .frame(width: 100, height: 30)
                 })
-                .disabled(currentGroupIndex == 0)
+//                .disabled(currentGroupIndex == 0)
                 
-                Text("\(currentGroupIndex+1)/\(groups.count)")
+                Text("\(currentGroupIndex+1)/\(datesToScroll.count)")
                 
                 Button(action:  {
                     let nextIndex = currentGroupIndex + 1
-                    if nextIndex < groups.count {
+                    if nextIndex < datesToScroll.count {
                         scroll(to: nextIndex)
                     }
                 }, label: {
                     Image(systemName: "chevron.right")
                         .frame(width: 100, height: 30)
                 })
-                .disabled(currentGroupIndex == groups.count - 1)
+//                .disabled(currentGroupIndex == datesToScroll.count - 1)
             }
         } else {
             EmptyView()
         }
     }
     
-    
-    func recalculateGroups() -> [GroupBatch] {
+    func recalculateGroups() -> [Date] {
         let all: [NetworkTaskEntity] = listViewModel.entities.onlyNetworks
         
         print("Tasks count \(all.count)")
@@ -112,7 +121,7 @@ public struct NetworkChartView: View {
             }
         }
         print("Groups count \(groups.count)\n")
-        return groups
+        return groups.map { $0.tasks.first!.orderedTransactions.first!.fetchStartDate! }
     }
 }
 
