@@ -121,7 +121,7 @@ public struct NetworkChartView: View {
             }
         }
         print("Groups count \(groups.count)\n")
-        return groups.map { $0.tasks.first!.orderedTransactions.first!.fetchStartDate! }
+        return groups.compactMap { $0.tasks.first?.orderedTransactions.first?.fetchStartDate }
     }
 }
 
