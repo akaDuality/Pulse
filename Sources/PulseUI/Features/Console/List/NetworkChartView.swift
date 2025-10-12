@@ -12,6 +12,69 @@ public struct NetworkChartView: View {
     let intervalToBatch: TimeInterval = 10
     
     @State private var groups: [GroupBatch] = []
+
+    @State var shownGroup: GroupBatch?
+    var currentGroupIndex: Int {
+        groups.firstIndex { group in
+            group.id == shownGroup?.id
+        } ?? 0
+    }
+    
+    public var body: some View {
+        VStack {
+            if let shownGroup {
+                BatchChart(group: shownGroup)
+                    .frame(minHeight: 100)
+            } else {
+                Button("Reload") {
+                    shownGroup = groups.first
+                }
+            }
+            
+            navigationButtons
+        }
+        .onChange(of: listViewModel.entities) { newValue in
+            groups = recalculateGroups()
+            
+            if shownGroup == nil {
+                shownGroup = groups.last
+            }
+        }
+    }
+    
+    @ViewBuilder
+    var navigationButtons: some View {
+        if groups.count > 1 {
+            HStack {
+                Button(action:  {
+                    let prevIndex = currentGroupIndex - 1
+                    if prevIndex >= 0 {
+                        shownGroup = groups[prevIndex]
+                    }
+                }, label: {
+                    Image(systemName: "chevron.left")
+                        .frame(width: 100, height: 30)
+                })
+                .disabled(currentGroupIndex == 0)
+                
+                Text("\(currentGroupIndex+1)/\(groups.count)")
+                
+                Button(action:  {
+                    let nextIndex = currentGroupIndex + 1
+                    if nextIndex < groups.count {
+                        shownGroup = groups[nextIndex]
+                    }
+                }, label: {
+                    Image(systemName: "chevron.right")
+                        .frame(width: 100, height: 30)
+                })
+                .disabled(currentGroupIndex == groups.count - 1)
+            }
+        } else {
+            EmptyView()
+        }
+    }
+    
     
     func recalculateGroups() -> [GroupBatch] {
         let all: [NetworkTaskEntity] = listViewModel.entities.compactMap { entity in
@@ -45,65 +108,6 @@ public struct NetworkChartView: View {
         print("Groups count \(groups.count)\n")
         return groups
     }
-
-    @State var shownGroup: GroupBatch?
-    var currentGroupIndex: Int {
-        groups.firstIndex { group in
-            group.id == shownGroup?.id
-        } ?? 0
-    }
-    
-    public var body: some View {
-        VStack {
-            if groups.count > 1 {
-                HStack {
-                    Button(action:  {
-                        let nextIndex = currentGroupIndex + 1
-                        if nextIndex <= groups.count {
-                            shownGroup = groups[nextIndex]
-                        }
-                    }, label: {
-                        Image(systemName: "chevron.left")
-                            .frame(width: 100, height: 30)
-                    })
-                    .disabled(currentGroupIndex == 0)
-                    
-                    Text("\(groups.count)")
-                    
-                    Button(action:  {
-                        let prevIndex = currentGroupIndex - 1
-                        if prevIndex >= 0 {
-                            shownGroup = groups[prevIndex]
-                        }
-                    }, label: {
-                        Image(systemName: "chevron.right")
-                            .frame(width: 100, height: 30)
-                    })
-                    .disabled(currentGroupIndex == groups.count - 1)
-                }
-            }
-            
-            if shownGroup == nil {
-                Button("Reload") {
-                    shownGroup = groups.first
-                }
-                .onAppear {
-                    if shownGroup == nil {
-                        shownGroup = groups.first
-                    }
-                }
-            } else {
-                ForEach(groups) { group in
-                    if group.id == shownGroup?.id {
-                        BatchChart(group: group)
-                    }
-                }
-            }
-        }
-        .onChange(of: listViewModel.entities) { newValue in
-            groups = recalculateGroups()
-        }
-    }
 }
 
 @available(iOS 17, *)
@@ -124,7 +128,7 @@ struct BatchChart: View {
         }
         .chartScrollableAxes(.horizontal)
         .chartXVisibleDomain(length: chartLength) // seconds
-        .frame(height: CGFloat(group.tasks.count) * lineHeight)
+        .frame(height: CGFloat(group.tasks.count) * lineHeight + 50) // 50 for time ticks
         .chartYAxis(.hidden)
 //        .chartXAxis {
 //            AxisMarks(values: .stride(by: .second, count: 4)) { value in
