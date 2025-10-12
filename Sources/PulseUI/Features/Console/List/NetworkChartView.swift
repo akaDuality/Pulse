@@ -2,11 +2,6 @@ import SwiftUI
 import Charts
 import Pulse
 
-let rowHeight: CGFloat = 10
-let space: CGFloat = 4
-var lineHeight: CGFloat {
-    rowHeight + space
-}
 
 let chartLength = 3
 
@@ -53,30 +48,35 @@ public struct NetworkChartView: View {
     
     public var body: some View {
         VStack {
-            HStack {
-                Button("Previous", systemImage: "chevron.left") {
-                    shownGroup = groups.first // TODO: move to prev
-                }
-                
-                Text("\(groups.count)")
-                
-                Button("Next", systemImage: "chevron.right") {
-                    shownGroup = groups.last // TODO: Move to next
-                }
-            }
-            .labelsHidden()
-           
-            ForEach(groups) { group in
-                if group.id == shownGroup?.id {
-                    BatchChart(group: group)
-                } else {
-                    Text("Select group")
-                        .onAppear {
-                            if shownGroup == nil {
-                                shownGroup = groups.first
-                            }
-                        }
+            if groups.count > 1 {
+                HStack {
+                    Button("Previous", systemImage: "chevron.left") {
+                        shownGroup = groups.first // TODO: move to prev
+                    }
                     
+                    Text("\(groups.count)")
+                    
+                    Button("Next", systemImage: "chevron.right") {
+                        shownGroup = groups.last // TODO: Move to next
+                    }
+                }
+                .labelsHidden()
+            }
+            
+            if shownGroup == nil {
+                Button("Reload") {
+                    shownGroup = groups.first
+                }
+                .onAppear {
+                    if shownGroup == nil {
+                        shownGroup = groups.first
+                    }
+                }
+            } else {
+                ForEach(groups) { group in
+                    if group.id == shownGroup?.id {
+                        BatchChart(group: group)
+                    }
                 }
             }
         }
@@ -86,6 +86,12 @@ public struct NetworkChartView: View {
 @available(iOS 17, *)
 struct BatchChart: View {
     let group: GroupBatch
+    
+    let rowHeight: CGFloat = 10
+    let space: CGFloat = 4
+    var lineHeight: CGFloat {
+        rowHeight + space
+    }
 
     var body: some View {
         Chart(Array(zip(group.tasks.indices, group.tasks)), id: \.1) { index, task in
@@ -95,7 +101,7 @@ struct BatchChart: View {
         }
         .chartScrollableAxes(.horizontal)
         .chartXVisibleDomain(length: chartLength) // seconds
-//        .frame(height: CGFloat(group.tasks.count) * lineHeight)
+        .frame(height: CGFloat(group.tasks.count) * lineHeight)
         .chartYAxis(.hidden)
 //        .chartXAxis {
 //            AxisMarks(values: .stride(by: .second, count: 4)) { value in
