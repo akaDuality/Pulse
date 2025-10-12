@@ -2,12 +2,22 @@ import SwiftUI
 import Charts
 import Pulse
 
+let rowHeight: CGFloat = 10
+let space: CGFloat = 4
+var lineHeight: CGFloat {
+    rowHeight + space
+}
+
+let chartLength = 3
+
 @available(iOS 17, *)
 public struct NetworkChartView: View {
     @EnvironmentObject var listViewModel: ConsoleListViewModel
 
-    var requests: [NetworkTaskEntity] {
-        listViewModel.entities.compactMap { entity in
+    let intervalToBatch: TimeInterval = 10
+    
+    var groups: [GroupBatch] {
+        let all: [NetworkTaskEntity] = listViewModel.entities.compactMap { entity in
             switch LoggerEntity(entity) {
             case .message:
                 return nil
@@ -15,35 +25,87 @@ public struct NetworkChartView: View {
                 return task
             }
         }
+        
+        print("Tasks count \(all.count)")
+        
+        var groups = [GroupBatch]()
+        
+        for task in all {
+            if
+                let lastGroup = groups.last,
+                let lastGroupEndDate = lastGroup.tasks.last?.orderedTransactions.last?.responseEndDate,
+                let taskFetchStart = task.orderedTransactions.first?.fetchStartDate,
+                lastGroupEndDate.timeIntervalSince(taskFetchStart) < intervalToBatch
+            {
+                print("append to count \(lastGroup.tasks.count)")
+                lastGroup.tasks.append(task)
+            } else {
+                print("create")
+                let newGroup = GroupBatch(id: task.taskId, task: task)
+                groups.append(newGroup)
+            }
+        }
+        print("Groups count \(groups.count)\n")
+        return groups
     }
-    
-    let rowHeight: CGFloat = 10
-    let space: CGFloat = 4
-    var lineHeight: CGFloat {
-        rowHeight + space
-    }
-    
-    let chartLength = 3
+
+    @State var shownGroup: GroupBatch?
     
     public var body: some View {
-        Chart(Array(zip(requests.indices, requests)), id: \.1) { index, task in
+        VStack {
+            HStack {
+                Button("Previous", systemImage: "chevron.left") {
+                    shownGroup = groups.first // TODO: move to prev
+                }
+                
+                Text("\(groups.count)")
+                
+                Button("Next", systemImage: "chevron.right") {
+                    shownGroup = groups.last // TODO: Move to next
+                }
+            }
+            .labelsHidden()
+           
+            ForEach(groups) { group in
+                if group.id == shownGroup?.id {
+                    BatchChart(group: group)
+                } else {
+                    Text("Select group")
+                        .onAppear {
+                            if shownGroup == nil {
+                                shownGroup = groups.first
+                            }
+                        }
+                    
+                }
+            }
+        }
+    }
+}
+
+@available(iOS 17, *)
+struct BatchChart: View {
+    let group: GroupBatch
+
+    var body: some View {
+        Chart(Array(zip(group.tasks.indices, group.tasks)), id: \.1) { index, task in
             if task.hasMetrics {
                 RequestRow(task: task, index: index, height: rowHeight, showAnnotation: true)
             }
         }
         .chartScrollableAxes(.horizontal)
         .chartXVisibleDomain(length: chartLength) // seconds
-        .frame(height: CGFloat(requests.count) * lineHeight)
+//        .frame(height: CGFloat(group.tasks.count) * lineHeight)
         .chartYAxis(.hidden)
 //        .chartXAxis {
 //            AxisMarks(values: .stride(by: .second, count: 4)) { value in
 //                if let date = value.as(Date.self) {
 //                    let second = Calendar.current.component(.second, from: date)
-//                    
+//
 //                    AxisValueLabel {
 //                        Text(date, format: .dateTime.second())
 //                    }
-//                    
+//
 //                    if second == 0 {
 //                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
 //                        AxisTick(stroke: StrokeStyle(lineWidth: 0.5))
@@ -56,6 +118,18 @@ public struct NetworkChartView: View {
 //        }
     }
 }
+
+
+class GroupBatch: Identifiable {
+    let id: UUID
+    var tasks: [NetworkTaskEntity]
+    
+    init(id: UUID, task: NetworkTaskEntity) {
+        self.id = id
+        self.tasks = [task]
+    }
+}
+
 
 @available(iOS 17, *)
 struct RequestRow: ChartContent {

@@ -44,11 +44,10 @@ private struct _InternalChartView: View {
     
     @ViewBuilder private var contents: some View {
         NetworkChartView()
-            .environment(\.defaultMinListRowHeight, 8)
-            .searchable(text: $searchBarViewModel.text)
-            .textInputAutocapitalization(.never)
-            .onSubmit(of: .search, searchViewModel.value.onSubmitSearch)
-            .disableAutocorrection(true)
+//            .searchable(text: $searchBarViewModel.text)
+//            .textInputAutocapitalization(.never)
+//            .onSubmit(of: .search, searchViewModel.value.onSubmitSearch)
+//            .disableAutocorrection(true)
     }
 }
 
